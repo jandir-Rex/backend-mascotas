@@ -31,7 +31,9 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary_storage',  # Requisito obligatorio antes de staticfiles para multimedia
     'django.contrib.staticfiles',
+    'cloudinary',          # App de Cloudinary para gestionar las subidas
     'rest_framework',
     'corsheaders',
     'core',
@@ -71,7 +73,6 @@ WSGI_APPLICATION = 'backend_mascotas.wsgi.application'
 # Database
 # Configuración directa con la base de datos MySQL de Aiven en Internet
 
-# Ahora Django leerá la base de datos de manera segura desde el servidor
 DATABASES = {
     'default': dj_database_url.config(
         default=os.environ.get('DATABASE_URL'),
@@ -124,5 +125,16 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Permitir orígenes cruzados en Internet
+# Configuración para archivos multimedia remotos (Imágenes de mascotas)
+MEDIA_URL = '/media/'
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+# Permitir orígenes cruzados en Internet (Conexión directa con Vercel)
 CORS_ALLOW_ALL_ORIGINS = True
+
+# Credenciales de Cloudinary vinculadas con tu cuenta
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dnoxmbt8c',
+    'API_KEY': '128522478898481',
+    'API_SECRET': 'PYjYRGus1gWbvmXZ73r0Mpofl4Q',
+}
