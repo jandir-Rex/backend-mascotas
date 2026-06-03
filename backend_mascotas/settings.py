@@ -129,12 +129,23 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = '/media/'
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
+# Configuración del almacenamiento global (Django 4.2+)
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
 # Permitir orígenes cruzados en Internet (Conexión directa con Vercel)
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Credenciales de Cloudinary vinculadas con tu cuenta
+
+# Credenciales de Cloudinary vinculadas con tu cuenta a través de variables de entorno
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': 'dnoxmbt8c',
-    'API_KEY': '128522478898481',
-    'API_SECRET': 'PYjYRGus1gWbvmXZ73r0Mpofl4Q',
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', 'dnoxmbt8c'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', '128522478898481'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', 'PYjYRGus1gWbvmXZ73r0Mpofl4Q'),
 }
