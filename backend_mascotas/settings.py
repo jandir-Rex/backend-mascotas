@@ -2,6 +2,10 @@ import dj_database_url
 import pymysql
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env (funciona local y no afecta Render)
+load_dotenv()
 
 # Configurar pymysql como el conector de MySQL nativo
 pymysql.install_as_MySQLdb()
@@ -9,9 +13,6 @@ pymysql.install_as_MySQLdb()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-l5o^w6@8*z@w!pu3or9lay@85op4pakede(^xg!ghk)50kj$)n'
@@ -24,23 +25,22 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.onrender.com']
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'cloudinary_storage',  # Requisito obligatorio antes de staticfiles para multimedia
+    'cloudinary_storage',  # Obligatorio ANTES de staticfiles
     'django.contrib.staticfiles',
-    'cloudinary',          # App de Cloudinary para gestionar las subidas
+    'cloudinary',
     'rest_framework',
     'corsheaders',
     'core',
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # SIEMPRE EN PRIMER LUGAR PARA EVITAR BLOQUEOS CORS
+    'corsheaders.middleware.CorsMiddleware',  # SIEMPRE PRIMERO
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -70,66 +70,70 @@ TEMPLATES = [
 WSGI_APPLICATION = 'backend_mascotas.wsgi.application'
 
 
-# Database
-# Configuración directa con la base de datos MySQL de Aiven en Internet
+# ---------------------------------------------------------------
+# BASE DE DATOS — MySQL en Aiven via DATABASE_URL
+# ---------------------------------------------------------------
+_db_url = os.environ.get('DATABASE_URL')
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600
-    )
-}
-
-# Configuración obligatoria de SSL seguro requerido por Aiven
-DATABASES['default']['OPTIONS'] = {
-    'ssl': {
-        'ssl_mode': 'REQUIRED'
+if _db_url:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=_db_url,
+            conn_max_age=600
+        )
     }
-}
+    # SSL obligatorio para Aiven
+    DATABASES['default']['OPTIONS'] = {
+        'ssl': {
+            'ssl_mode': 'REQUIRED'
+        }
+    }
+else:
+    # Fallback seguro: evita el crash cuando no hay .env todavía
+    import warnings
+    warnings.warn("No DATABASE_URL encontrado. Usando base de datos dummy.")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db_local_fallback.sqlite3',
+        }
+    }
 
 
 # Password validation
-# https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/6.0/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# Configuración de estáticos lista para despliegues en producción (Render)
-
+# ---------------------------------------------------------------
+# ARCHIVOS ESTÁTICOS
+# ---------------------------------------------------------------
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Configuración para archivos multimedia remotos (Imágenes de mascotas)
+# Compatibilidad con versiones antiguas de cloudinary_storage
+# que todavía buscan STATICFILES_STORAGE en vez de STORAGES
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
+
+# ---------------------------------------------------------------
+# ARCHIVOS MULTIMEDIA — Cloudinary
+# ---------------------------------------------------------------
 MEDIA_URL = '/media/'
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-# Configuración del almacenamiento global (Django 4.2+)
+# Configuración moderna Django 4.2+
 STORAGES = {
     "default": {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
@@ -139,13 +143,22 @@ STORAGES = {
     },
 }
 
-# Permitir orígenes cruzados en Internet (Conexión directa con Vercel)
+
+# ---------------------------------------------------------------
+# CORS — Permite peticiones desde Vercel
+# ---------------------------------------------------------------
 CORS_ALLOW_ALL_ORIGINS = True
 
 
-# Credenciales de Cloudinary vinculadas con tu cuenta a través de variables de entorno
+# ---------------------------------------------------------------
+# CLOUDINARY — Credenciales via variables de entorno
+# ---------------------------------------------------------------
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', 'dnoxmbt8c'),
     'API_KEY': os.environ.get('CLOUDINARY_API_KEY', '128522478898481'),
     'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', 'PYjYRGus1gWbvmXZ73r0Mpofl4Q'),
 }
+
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
