@@ -71,7 +71,7 @@ WSGI_APPLICATION = 'backend_mascotas.wsgi.application'
 
 
 # ---------------------------------------------------------------
-# BASE DE DATOS — MySQL en Aiven via DATABASE_URL
+# BASE DE DATOS — MySQL en Railway via DATABASE_URL
 # ---------------------------------------------------------------
 _db_url = os.environ.get('DATABASE_URL')
 
@@ -82,16 +82,9 @@ if _db_url:
             conn_max_age=600
         )
     }
-    # SSL obligatorio para Aiven
-    DATABASES['default']['OPTIONS'] = {
-        'ssl': {
-            'ssl_mode': 'REQUIRED'
-        }
-    }
 else:
-    # Fallback seguro: evita el crash cuando no hay .env todavía
     import warnings
-    warnings.warn("No DATABASE_URL encontrado. Usando base de datos dummy.")
+    warnings.warn("No DATABASE_URL encontrado. Usando base de datos SQLite local.")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -122,8 +115,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Compatibilidad con versiones antiguas de cloudinary_storage
-# que todavía buscan STATICFILES_STORAGE en vez de STORAGES
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 
@@ -133,7 +124,6 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 MEDIA_URL = '/media/'
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-# Configuración moderna Django 4.2+
 STORAGES = {
     "default": {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
